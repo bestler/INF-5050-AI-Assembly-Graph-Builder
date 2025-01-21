@@ -125,7 +125,7 @@ class Graph:
             part = node.get_part()
             info = f'\nPartID={part.get_part_id()}\nFamilyID={part.get_family_id()}'
             nx_hash_info = f'nb={part.get_part_id()}, nn={part.get_family_id()}'.encode('ascii', 'ignore').decode('ascii')
-            graph_nx.add_node(node, info=info, nx_has_info=nx_hash_info)
+            graph_nx.add_node(node, info=info, nx_hash_info=nx_hash_info)
 
         for source_node in self.get_nodes():
             connected_nodes = self.get_edges()[source_node]
@@ -238,6 +238,31 @@ class Graph:
 
                 if node2 in edges[node]:
                     adj_matrix[idx, idx2] = adj_matrix[idx2, idx] = 1
+
+        return adj_matrix
+    
+    def get_full_adjacency_matrix(self, size: int, part_mapping: dict) -> np.ndarray:
+        """
+        Returns the full adjacency matrix of the graph.
+        :param size: size of the matrix
+        :return: full adjacency matrix
+        """
+        adj_matrix = np.zeros((size, size), dtype=int)
+        edges: Dict[Node, List[Node]] = self.get_edges()
+
+        for node, neighbors in edges.items():
+            old_part_id = int(node.get_part().get_part_id())
+            new_part_id = part_mapping[old_part_id]
+            if new_part_id >= size:
+                raise IndexError(f"Node ID {node_id} is out of bounds for matrix of size {size}")
+
+            for neighbor in neighbors:
+                old_neighbor_id = int(neighbor.get_part().get_part_id())
+                new_neighbor_id = part_mapping[old_neighbor_id]
+                if new_neighbor_id >= size:
+                    raise IndexError(f"Neighbor ID {neighbor_id} is out of bounds for matrix of size {size}")
+
+                adj_matrix[new_part_id][new_neighbor_id] = 1
 
         return adj_matrix
 
