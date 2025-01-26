@@ -2,5 +2,6 @@ matplotlib
 networkx>=3.0
 numpy
 scikit-learn
-
+torch
+torch-geometric
 urllib3

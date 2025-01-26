@@ -40,3 +40,6 @@ class Node:
 
     def get_part(self) -> Part:
         return self.__part
+        
+    def set_id(self, id: int) -> None:
+        self.__id = id 
