@@ -302,3 +302,7 @@ class Graph:
         """
         corresponding_node = self.get_node(node_id)
         self.remove_leaf_node(corresponding_node)
+    
+    def add_part(self, part: Part):
+        node = Node(self.__node_counter, part)
+        self.__add_node(node)

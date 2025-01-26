@@ -3,28 +3,17 @@ from typing import List, Set, Tuple, Dict
 from abc import ABC, abstractmethod
 from itertools import permutations
 import numpy as np
+from sklearn.model_selection import train_test_split
 from graph import Graph
 from part import Part
-from simple_edge_frequency_model import SimpleEdgeFrequencyModel
+from prediction_classes.naive_predictor import SimpleEdgeFrequencyModel
 import torch
 import torch.nn as nn
-import FFFN
-
-class FFNModel(nn.Module):
-    def __init__(self, input_size, output_size):
-        super(FFNModel, self).__init__()
-        self.fc1 = nn.Linear(input_size, 128)
-        #self.fc2 = nn.Linear(50, 100)
-        #self.fc3 = nn.Linear(50, 50)
-        self.fc4 = nn.Linear(128, output_size)
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        #x = torch.relu(self.fc2(x))
-        #x = torch.relu(self.fc3(x))
-        x = self.sigmoid(self.fc4(x))
-        return x
+from prediction_classes.family_predictor import FamilyPredictor
+from prediction_classes.part_predictor import PartPredictor
+from ffn import FFNModel
+import numpy as np
+import time
 
 
 class MyPredictionModel(ABC):
@@ -54,17 +43,24 @@ def load_model(file_path: str) -> MyPredictionModel:
     return model
 
 
-def evaluate(model: MyPredictionModel, data_set: List[Tuple[Set[Part], Graph]]) -> float:
+def evaluate(model: MyPredictionModel, data_set: List[Tuple[Set[Part], Graph]]) -> dict:
     """
     Evaluates a given prediction model on a given data set.
     :param model: prediction model
     :param data_set: data set
     :return: evaluation score (for now, edge accuracy in percent)
     """
+    num_graphs = len(data_set)
+    correct_predicted_graphs = 0
+
     sum_correct_edges = 0
     edges_counter = 0
 
+    test = 0
+
     for input_parts, target_graph in data_set:
+        # print(test)
+        # test += 1
         #print(len(input_parts))
         predicted_graph = model.predict_graph(input_parts)
 
@@ -74,8 +70,15 @@ def evaluate(model: MyPredictionModel, data_set: List[Tuple[Set[Part], Graph]]) 
         edges_counter += len(input_parts) * len(input_parts)
         sum_correct_edges += edge_accuracy(predicted_graph, target_graph)
 
+        ## Exact match metric
+        correct_predicted_graphs += exact_match(predicted_graph, target_graph)
+
+    total_edge_accuracy = sum_correct_edges / edges_counter * 100
+
+    exact_match_score = correct_predicted_graphs / num_graphs * 100
+
     # return value in percent
-    return sum_correct_edges / edges_counter * 100
+    return {'edge_accuracy': total_edge_accuracy, 'exact_match': exact_match_score}
 
 
 def edge_accuracy(predicted_graph: Graph, target_graph: Graph) -> int:
@@ -103,6 +106,18 @@ def edge_accuracy(predicted_graph: Graph, target_graph: Graph) -> int:
         best_score = max(best_score, score)
 
     return best_score
+
+def exact_match(predicted_graph: Graph, target_graph: Graph) -> bool:
+    """
+    Returns True if the predicted graph is exactly the same as the target graph.
+    :param predicted_graph:
+    :param target_graph:
+    :return:
+    """
+    assert len(predicted_graph.get_nodes()) == len(target_graph.get_nodes()), 'Mismatch in number of nodes.'
+    assert predicted_graph.get_parts() == target_graph.get_parts(), 'Mismatch in expected and given parts.'
+
+    return predicted_graph == target_graph
 
 
 def __generate_part_list_permutations(parts: Set[Part]) -> List[Tuple[Part]]:
@@ -140,27 +155,33 @@ def __generate_part_list_permutations(parts: Set[Part]) -> List[Tuple[Part]]:
 # Example code for evaluation
 
 if __name__ == '__main__':
-    # Load train data
-    with open('data/test_graphs.dat', 'rb') as file:
-        train_graphs: List[Graph] = pickle.load(file)
 
-    # Load the final model
-    model_file_path = 'simple_edge_frequency_model.pkl'
-    prediction_model: MyPredictionModel = load_model(model_file_path)
+    # Prüfen, ob die Daten konsistent geladen werden
+    with open('data/graphs.dat', 'rb') as file:
+        graphs: List[Graph] = pickle.load(file)
 
-    # For illustration, we compute the eval score on a portion of the training data
 
-    #fffn = FFFN.FFFN()
-    #fffn.load_model('edge_prediction_model_full.pth')
+    _, test_graphs = train_test_split(graphs, test_size=0.15, random_state=65)
 
-    instances = [(graph.get_parts(), graph) for graph in train_graphs]
+    # Uncomment here the model you want to evaluate. Unser Hauptansatz ist der PartPredictor
 
-    # Log time
-    import time
+    # naive_predictor = load_model('edge_prediction_models/simple_edge_frequency_model.pkl')
+
+
+    # family_predictor = FamilyPredictor()
+    # family_predictor.load_model('edge_prediction_models/family_edge_prediction_model.pth')
+
+    part_predictor = PartPredictor()
+    part_predictor.load_model('edge_prediction_models/part_edge_prediction_model.pth')
+
+
+    instances = [[graph.get_parts(), graph] for graph in test_graphs]
+
 
     start = time.time()
-    eval_score = evaluate(prediction_model, instances)
+    eval_results = evaluate(part_predictor, instances)
     end = time.time()
 
-    print(f'Evaluation score: {eval_score:.2f}%')
+    print(f'Evaluation results: {eval_results}')
+    
     print(f'Evaluation time: {end - start:.2f}s')
