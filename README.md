@@ -24,8 +24,8 @@ Das Repository ist wie folgt strukturiert:
 
 > **Hinweis:**  
 > - In den Basisklassen (`Graph` und `Node`) wurden zwei zusätzliche Funktionen implementiert, die für den GNN-Ansatz erforderlich sind  
-> - Die Funktion `evaluate()` wurde erweitert, sodass sie nun ein Dictionary mit zwei Metriken (Edge Accuracy, Exact Match) zurückgibt, anstatt nur einen einzelnen Wert.  
-> - Das Skript `evaluate.py` kann direkt ausgeführt werden, um die Ergebnisse der Modelle zu berechnen und anzuzeigen.
+> - Die Funktion `evaluate()` wurde erweitert, sodass sie nun ein Dictionary mit zwei Metriken (Edge Accuracy, Exact Match) zurückgibt, anstatt nur einen einzelnen Wert. 
+> - Das Skript `evaluate.py` kann direkt ausgeführt werden, um die Ergebnisse der Modelle zu berechnen und anzuzeigen
 
 Im Folgenden wird die Implementierung beschrieben, wobei der Fokus auf der Methodik, den durchgeführten Experimenten und den erzielten Erkenntnissen liegt.
 
@@ -78,7 +78,7 @@ Bemerkenswerterweise erzielte dieser Ansatz bereits eine Edge Accuracy von knapp
 ##### Ausgangspunkt und erste Experimente
 
 - **Ansatz mit Adjazenzmatrix:**  
-  Ursprünglich sollte das Modell eine vollständige Adjazenzmatrix vorhersagen. Dies wurde jedoch verworfen, da die Matrix mit einer Größe von 1089x1089 den Speicherplatz deutlich überschritten hätte.
+  Ursprünglich sollte das Modell eine vollständige Adjazenzmatrix vorhersagen. Dies wurde jedoch verworfen, da die Matrix mit einer Größe von ca. 2000*2000 den Speicherplatz deutlich überschritten hätte und kein effektives Training möglich war. Außerdem hätte man trotzdem noch das Problem gehabt, dass Teile auch mehrfach vorkommen können und daher die Matrix noch nichteinmal ausreichend gewesen wäre.
 
 - **Reduzierung auf Kantenpaarvorhersage:**  
   Stattdessen wurde die Problemstellung vereinfacht, indem das Modell für jedes Knotenpaar separat die Wahrscheinlichkeit für eine Verbindung vorhersagt. Dadurch konnte das Problem in zwei kleinere Problemstellungen aufgeteilt werdne. Dieser Ansatz schien uns vor allem schlüssig, da wir durch den "Naiven Ansatz" ja bereits wussten, dass man mit den Kantenwahrscheinlichkeiten ganz gute Ergebnisse erziehlen kann. 
@@ -100,7 +100,7 @@ Für die Eingabedaten wurden zwei Varianten der Feature-Repräsentation getestet
 
 
 Zusätzlich wurden die Features der Graphen folgendermaßen kodiert und anschließend zusammengefügt:  
-- **Graphenmerkmale:** Die Bestandteile des Graphen wurden frequency-encoded, um ihre Häufigkeit in den Daten zu berücksichtigen.  
+- **Frequency-Encoding:** Die Bestandteile des Graphen wurden frequency-encoded, um ihre Häufigkeit in den Daten zu berücksichtigen.  
 - **One-Hot-Encoding:** Die Part-ID oder Family-ID wurde als One-Hot-Vektor kodiert, um eindeutige Identifikationen zu gewährleisten.  
 
 Das Target war ein Vektor, der die Verbindungen des jeweiligen Knotens darstellte: Für jeden verbundenen Knoten wurde der entsprechende Wert auf `1` gesetzt, während die Werte für nicht verbundene Knoten `0` blieben.
@@ -112,7 +112,7 @@ Die Hyperparameter (z. B. Anzahl der Neuronen im Hidde-Layern, Lernrate, Batchgr
 - **Manuelle Optimierung:** Für das finale Modell wurden die vielversprechendsten Kombinationen von Parametern manuell getestet und angepasst, da dies in der Praxis oft schneller zu verwertbaren Ergebnissen führte. Insbesonder wenn man nicht so viele Erfahrung hat in diesem Bereich, fanden wir es auch hilfreich, dass Training wirklich zu beobachten und Auswirkung der Hyperparamtern zu betrachten und nicht nur auf die Accuracy am Ende zu achten.
 
 **Finales Modell:**  
-Das finale Feedforward-Netzwerk wurde mit Cross-Validation trainiert, um eine robuste Generalisierung zu gewährleisten. Diese Methode lieferte konsistent bessere Ergebnisse als eine einfache Aufteilung in Trainings- und Validierungsdatensätze.
+Das finale Feedforward-Netzwerk wurde mit Cross-Validation trainiert. Wir haben uns auf das Modell mit den PartIDs konzentriert. Der Codes des Trainings ist in ```train/PartFFN``` zu sehen.
 
 
 #### 2. Graph-Aufbau aus den Wahrscheinlichkeiten
@@ -131,23 +131,14 @@ Das Problem wurde schließlich als klassisches Graphenproblem erkannt. Die Lösu
 1. Einen garantiert azyklischen und verbundenen Graphen
 2. Eine effiziente Berücksichtigung der Wahrscheinlichkeiten
 
-**Erkenntnis:**
-Die Nutzung des MST war ein entscheidender Schritt, da der iterative Aufbau ohne diesen Ansatz nicht zuverlässig funktionierte.
-
----
 
 ### Beobachtungen und Erkenntnisse
 
-#### Ergebnisse und Validierung
+#### Ergebnisse
 
 - **Edge-Accuracy:** Die Vorhersage der Kanten erreichte konsistent eine hohe Genauigkeit von etwa 96%-97%.  
-- **Exact Match Accuracy:** Die exakte Rekonstruktion ganzer Graphen war jedoch schwieriger und schwankte abhängig von der Trainingsaufteilung und den Daten.
+- **Exact Match Accuracy:** Wir erziehlten eine Exact Match Accuracy von ca. 65%
 
-##### Cross-Validation
-
-Die Einführung von Cross-Validation führte zu einer weiteren Verbesserung, weswegen wir das auch für die finale Erstellung unseres Modells verwendet haben.
-
----
 
 #### Herausforderungen und Limitierungen
 
@@ -162,14 +153,11 @@ Die Einführung von Cross-Validation führte zu einer weiteren Verbesserung, wes
 3. **Fehlende End-to-End-Optimierung:**  
    - Das Modell optimiert nur die Vorhersage der Kantenwahrscheinlichkeiten, nicht jedoch das Gesamtergebnis des Graphenaufbaus. Ein End-to-End-Ansatz könnte diese Schwäche adressieren. Deshalb haben wir danach noch versucht, mittels eines GNNs die Aufgabe noch besser zu erledigen. 
 
----
-
 
 #### Erkenntnisse:
 
 - Die Kombination aus Feedforward-Netzwerk und graphentheoretischen Methoden (MST) lieferte gute Ergebnisse bei der Vorhersage von Baugruppen.  
 - Cross-Validation und manuelle Hyperparameteroptimierung erwiesen sich als entscheidend für die Modellverbesserung.
-
 
 
 ---
