@@ -112,7 +112,7 @@ Die Hyperparameter (z. B. Anzahl der Neuronen im Hidde-Layern, Lernrate, Batchgr
 - **Manuelle Optimierung:** Für das finale Modell wurden die vielversprechendsten Kombinationen von Parametern manuell getestet und angepasst, da dies in der Praxis oft schneller zu verwertbaren Ergebnissen führte. Insbesonder wenn man nicht so viele Erfahrung hat in diesem Bereich, fanden wir es auch hilfreich, dass Training wirklich zu beobachten und Auswirkung der Hyperparamtern zu betrachten und nicht nur auf die Accuracy am Ende zu achten.
 
 **Finales Modell:**  
-Das finale Feedforward-Netzwerk wurde mit Cross-Validation trainiert. Wir haben uns auf das Modell mit den PartIDs konzentriert. Der Codes des Trainings ist in ```train/PartFFN``` zu sehen.
+Das finale Feedforward-Netzwerk wurde mit Cross-Validation trainiert. Wir haben uns auf das Modell mit den PartIDs konzentriert. Der Codes des Trainings ist in ```train/PartFFN``` zu sehen. Dort ist das Vorgehen auch noch genauer beschrieben.
 
 
 #### 2. Graph-Aufbau aus den Wahrscheinlichkeiten
@@ -137,7 +137,7 @@ Das Problem wurde schließlich als klassisches Graphenproblem erkannt. Die Lösu
 #### Ergebnisse
 
 - **Edge-Accuracy:** Die Vorhersage der Kanten erreichte konsistent eine hohe Genauigkeit von etwa 96%-97%.  
-- **Exact Match Accuracy:** Wir erziehlten eine Exact Match Accuracy von ca. 65%
+- **Exact Match Accuracy:** Wir erziehlten eine Exact Match Accuracy von ca. 66%
 
 
 #### Herausforderungen und Limitierungen
